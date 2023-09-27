@@ -1,0 +1,80 @@
+﻿@page "/"
+@using System.Globalization
+@using System.Text.Json
+@using System.Text
+@inject HttpClient Http
+
+<PageTitle>Wann bin ich weg?</PageTitle>
+
+<h1>Es ist KW @GetKwOfNow()</h1>
+
+<table class="table">
+    <thead>
+    <tr>
+      <th scope="col">Wochentag</th>
+      <th scope="col">Aufstehen</th>
+      <th scope="col">Weggehen</th>
+    </tr>
+  </thead>
+  <tbody>
+
+
+@foreach (var p in config) {
+    if(p.period == ((GetKwOfNow()%2 == 0) ? Period.EvenWeek : Period.OddWeek) || p.period == Period.None) {
+
+    <tr>
+        <th scope="row">
+            @culture.DateTimeFormat.GetDayName(p.day)
+        </th>
+
+        <td>
+            @p.wake.ToShortTimeString()
+        </td>
+
+        <td>
+            @p.leaving.ToShortTimeString()
+        </td>
+    </tr>
+    }
+}
+  </tbody>
+
+</table>
+@code
+{
+    CultureInfo culture = CultureInfo.GetCultureInfo("de");
+    List<Leaving> config = new();
+
+    private enum Period {
+        None = 0,
+        EvenWeek = 1,
+        OddWeek = 2
+
+    }
+    private class Leaving {
+        public DayOfWeek day {get; set;}
+        public TimeOnly wake {get; set;}
+        public TimeOnly leaving {get; set;}
+        public Period period {get; set;}
+
+    }
+    private List<Leaving> times = new(); 
+    int GetKwOfNow()
+    {
+        return culture.Calendar
+            .GetWeekOfYear(DateTime.Now, CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday);
+    }
+
+    private async Task GenerateLeavingTimes()
+    {
+        var response = await Http.GetStringAsync("config.json");
+        config = JsonSerializer.Deserialize<List<Leaving>>(response) ?? new();
+        StateHasChanged();
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        await GenerateLeavingTimes();
+        await base.OnInitializedAsync();
+    }
+}
