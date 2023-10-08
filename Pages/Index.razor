@@ -6,7 +6,16 @@
 
 <PageTitle>Wann bin ich weg?</PageTitle>
 
-<h1>Es ist KW @GetKwOfNow()</h1>
+<h1>
+    Es ist KW 
+    <select @bind=selectedWeek>
+        @for (int week = 0; week <= GetWeeksInYear(culture.Calendar.GetYear(DateTime.Now)); week++) {
+            <option id=@week selected=@(week == GetKwOfNow())>
+                @week
+            </option>
+        }
+    </select>
+</h1>
 
 <table class="table">
     <thead>
@@ -20,7 +29,7 @@
 
 
 @foreach (var p in config) {
-    if(p.period == ((GetKwOfNow()%2 == 0) ? Period.EvenWeek : Period.OddWeek) || p.period == Period.None) {
+    if(p.period == ((selectedWeek%2 == 0) ? Period.EvenWeek : Period.OddWeek) || p.period == Period.None) {
 
     <tr>
         <th scope="row">
@@ -44,6 +53,7 @@
 {
     CultureInfo culture = CultureInfo.GetCultureInfo("de");
     List<Leaving> config = new();
+    int selectedWeek = 0;
 
     private enum Period {
         None = 0,
@@ -76,5 +86,14 @@
     {
         await GenerateLeavingTimes();
         await base.OnInitializedAsync();
+    }
+
+    private int GetWeeksInYear(int year)
+    {
+        DateTimeFormatInfo dfi = DateTimeFormatInfo.CurrentInfo;
+        DateTime date1 = new DateTime(year, 12, 31);
+        Calendar cal = dfi.Calendar;
+        return  cal.GetWeekOfYear(date1, dfi.CalendarWeekRule, 
+                                          dfi.FirstDayOfWeek);
     }
 }
