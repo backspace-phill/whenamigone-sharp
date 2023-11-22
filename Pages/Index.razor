@@ -10,7 +10,7 @@
     Es ist KW 
     <select @bind=selectedWeek>
         @for (int week = 0; week <= GetWeeksInYear(culture.Calendar.GetYear(DateTime.Now)); week++) {
-            <option id=@week selected=@(week == GetKwOfNow())>
+            <option id=@week >
                 @week
             </option>
         }
@@ -69,6 +69,7 @@
 
     }
     private List<Leaving> times = new(); 
+
     int GetKwOfNow()
     {
         return culture.Calendar
@@ -84,8 +85,10 @@
 
     protected async override Task OnInitializedAsync()
     {
+        selectedWeek = GetKwOfNow();
         await GenerateLeavingTimes();
         await base.OnInitializedAsync();
+        StateHasChanged();
     }
 
     private int GetWeeksInYear(int year)
